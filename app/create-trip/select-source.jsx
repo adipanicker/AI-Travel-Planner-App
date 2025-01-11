@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react';
+import React, { useEffect, useContext, useState } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplet
 import { CreateTripContext } from './../../context/CreateTripContext';
 import { Colors } from '../../constants/Colors';
 
-export default function SearchPlace() {
+export default function SelectSource() {
   const navigation = useNavigation();
   const { tripData, setTripData } = useContext(CreateTripContext);
   const router = useRouter();
@@ -21,14 +21,14 @@ export default function SearchPlace() {
   useEffect(() => {
     navigation.setOptions({
       headerShown: true,
-      headerTitle: 'Select Destination',
+      headerTitle: 'Select Start Point',
     });
   }, []);
 
   const handleNextPress = () => {
     if (selectedPlace) {
-      setTripData({ ...tripData, location: selectedPlace }); // Save the destination in the context
-      router.push('/create-trip/select-traveler'); // Navigate to the next page
+      setTripData({ ...tripData, startPoint: selectedPlace }); // Save the place in the context
+      router.push('/create-trip/search-place'); // Navigate to the next page
     }
   };
 
@@ -39,18 +39,16 @@ export default function SearchPlace() {
     >
       <View style={styles.overlay}>
         {/* Title */}
-        <Text style={styles.title}>Where do you want to go?</Text>
+        <Text style={styles.title}>Where are you starting from?</Text>
 
         {/* Google Places Autocomplete */}
         <GooglePlacesAutocomplete
-          placeholder="Search for a destination"
+          placeholder="Search for a location"
           fetchDetails={true}
           onPress={(data, details = null) => {
             setSelectedPlace({
               name: data.description,
               location: details?.geometry?.location,
-              photoRef: details?.photos?.[0]?.photo_reference,
-              url: details?.url,
             });
           }}
           query={{
@@ -91,6 +89,7 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 28,
+    fontFamily: 'outfit-bold',
     color: '#fff',
     textAlign: 'center',
     marginBottom: 20,

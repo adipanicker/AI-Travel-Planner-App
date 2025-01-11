@@ -29,7 +29,7 @@ export default function TripDetails() {
     <ScrollView>
          <Image source={{uri:
         'https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference='
-        +formatData(tripDetails?.tripData).locationInfo?.photoRef
+        +formatData(tripDetails?.tripData).location?.photoRef
         +'&key='+process.env.EXPO_PUBLIC_GOOGLE_MAP_KEY}}
         style={{
             width:'100%',

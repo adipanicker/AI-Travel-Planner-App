@@ -10,24 +10,36 @@ import React, { useEffect, useState } from "react";
 import { useNavigation, useRouter } from "expo-router";
 import { Colors } from "./../../../constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, onAuthStateChanged } from "firebase/auth";
 import { auth } from "./../../../configs/FirebaseConfig";
+
 export default function SignIn() {
   const navigation = useNavigation();
   const router = useRouter();
 
-  const [email, setEmail] = useState();
-  const [password, setPassword] = useState();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   useEffect(() => {
     navigation.setOptions({
       headerShown: false,
     });
-  }, []);
+
+    // Check if the user is already signed in
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        // User is signed in, navigate to the `/mytrip` page
+        router.replace("/mytrip");
+      }
+    });
+
+    // Cleanup the subscription
+    return () => unsubscribe();
+  }, [router]);
 
   const onSignIn = () => {
-    if (!email && !password) {
-      ToastAndroid.show("Please Enter Email & Passsword", ToastAndroid.LONG);
+    if (!email || !password) {
+      ToastAndroid.show("Please Enter Email & Password", ToastAndroid.LONG);
       return;
     }
 
@@ -35,16 +47,25 @@ export default function SignIn() {
       .then((userCredential) => {
         // Signed in
         const user = userCredential.user;
+        console.log("User signed in:", user);
         router.replace("/mytrip");
-        console.log(user);
-        // ...
       })
       .catch((error) => {
         const errorCode = error.code;
         const errorMessage = error.message;
-        console.log(errorMessage, error.code);
-        if (errorCode == "auth/invalid-credential") {
+        console.log(errorMessage, errorCode);
+
+        if (errorCode === "auth/invalid-credential") {
           ToastAndroid.show("Invalid credentials", ToastAndroid.LONG);
+        } else if (errorCode === "auth/user-not-found") {
+          ToastAndroid.show("User not found", ToastAndroid.LONG);
+        } else if (errorCode === "auth/wrong-password") {
+          ToastAndroid.show("Wrong password", ToastAndroid.LONG);
+        } else {
+          ToastAndroid.show(
+            "Something went wrong. Try again.",
+            ToastAndroid.LONG
+          );
         }
       });
   };
@@ -92,37 +113,18 @@ export default function SignIn() {
       </Text>
 
       {/* Email  */}
-      <View
-        style={{
-          marginTop: 50,
-        }}
-      >
-        <Text
-          style={{
-            fontFamily: "outfit",
-          }}
-        >
-          Email
-        </Text>
+      <View style={{ marginTop: 50 }}>
+        <Text style={{ fontFamily: "outfit" }}>Email</Text>
         <TextInput
           style={styles.input}
           onChangeText={(value) => setEmail(value)}
           placeholder="Enter Email"
+          keyboardType="email-address"
         />
       </View>
       {/* Password  */}
-      <View
-        style={{
-          marginTop: 20,
-        }}
-      >
-        <Text
-          style={{
-            fontFamily: "outfit",
-          }}
-        >
-          Password
-        </Text>
+      <View style={{ marginTop: 20 }}>
+        <Text style={{ fontFamily: "outfit" }}>Password</Text>
         <TextInput
           secureTextEntry={true}
           style={styles.input}
@@ -172,7 +174,7 @@ export default function SignIn() {
         </Text>
       </TouchableOpacity>
 
-      {/* Create Account Button  */}
+      {/* Forgot Password Button  */}
       <TouchableOpacity
         style={{
           padding: 20,

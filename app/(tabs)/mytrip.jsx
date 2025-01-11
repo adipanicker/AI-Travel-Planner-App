@@ -51,7 +51,7 @@ export default function MyTrip() {
           fontFamily:'outfit-bold',
           fontSize:35
         }}>My Trips</Text>
-        <TouchableOpacity onPress={()=>router.push('/create-trip/search-place')}>
+        <TouchableOpacity onPress={()=>router.push('/create-trip')}>
         <Ionicons name="add-circle" size={50} color="black" />
         </TouchableOpacity>
       </View>

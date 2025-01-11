@@ -61,7 +61,7 @@ export default function ReviewTrip() {
         <Text style={{
             fontFamily:'outfit-medium',
             fontSize:20
-        }}>{tripData?.locationInfo?.name}</Text>
+        }}>{tripData?.location?.name}</Text>
 
       </View>
       </View>

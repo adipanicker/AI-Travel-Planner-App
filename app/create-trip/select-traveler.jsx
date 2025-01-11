@@ -49,7 +49,7 @@ export default function SelectTraveler() {
         <Text style={{
           fontFamily:'outfit-bold',
           fontSize:23
-        }}>Choose your traveles</Text>
+        }}>Choose your travelers</Text>
 
         <FlatList
           data={SelectTravelesList}

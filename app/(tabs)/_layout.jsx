@@ -16,6 +16,13 @@ export default function TabLayout() {
             size={24} color={color} />
           }}
         />
+        <Tabs.Screen name="tripManager"
+          options={{
+            tabBarLabel:'Trip Manager',
+            tabBarIcon:({color})=><Ionicons name="logo-ionic" 
+            size={24} color={color} />
+          }}
+        />
         <Tabs.Screen name="discover"
         options={{
           tabBarLabel:'Discover',
