@@ -46,6 +46,7 @@ export default function Expenses() {
           const data = tripDoc.data();
           setExpenses(data.expenses || []);
           setBudget(data.budget || '');
+          setCurrency(data.currency || 'USD');
           setTotalExpense(
             (data.expenses || []).reduce((sum, expense) => sum + (expense.amount || 0), 0)
           );
@@ -91,6 +92,17 @@ export default function Expenses() {
     }
   };
 
+  const handleCurrencyChange = async (newCurrency) => {
+    setCurrency(newCurrency);
+    try {
+      const tripDocRef = doc(firestore, 'ManagedTrips', tripId);
+      await updateDoc(tripDocRef, { currency: newCurrency });
+    } catch (error) {
+      console.error('Error saving currency:', error);
+      Alert.alert('Error', 'Failed to save currency. Please try again.');
+    }
+  };
+
   const expenseTypes = [
     { type: 'Food', icon: 'restaurant-outline' },
     { type: 'Transport', icon: 'car-outline' },
@@ -120,7 +132,7 @@ export default function Expenses() {
             {
               Food: 'restaurant-outline',
               Transport: 'car-outline',
-              Accommodation: 'bed-outline',
+              Stay: 'bed-outline',
               Activities: 'bicycle-outline',
               Other: 'ellipsis-horizontal-circle-outline',
             }[item.type] || 'cash-outline'
@@ -142,7 +154,10 @@ export default function Expenses() {
   return (
     <KeyboardAvoidingView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Track Your Expenses</Text>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Expense Tracker</Text>
+        </View>
+       
 
         {/* Budget Section */}
         {editBudget ? (
@@ -192,7 +207,7 @@ export default function Expenses() {
         {/* Currency Picker */}
         <Picker
           selectedValue={currency}
-          onValueChange={(itemValue) => setCurrency(itemValue)}
+          onValueChange={handleCurrencyChange}
           style={styles.picker}
         >
           <Picker.Item label="USD" value="USD" />
@@ -270,6 +285,15 @@ const styles = StyleSheet.create({
   content: {
     padding: 20,
   },
+  header: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  headerTitle: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    marginTop: 20,
+  },
   title: {
     fontSize: 24,
     fontWeight: 'bold',
@@ -305,7 +329,7 @@ const styles = StyleSheet.create({
   },
   budgetText: {
     fontSize: 18,
-    marginRight: 10,
+    fontWeight: 'bold',
   },
   totalExpense: {
     fontSize: 18,
@@ -322,7 +346,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#ccc',
     padding: 15,
     borderRadius: 10,
-    flex: 1,
+    width: 100,
     alignItems: 'center',
     marginHorizontal: 5,
     elevation: 3,
@@ -346,7 +370,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   addButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: 'black',
     padding: 15,
     borderRadius: 5,
     alignItems: 'center',

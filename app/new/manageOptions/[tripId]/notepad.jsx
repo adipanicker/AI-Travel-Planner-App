@@ -1,108 +1,126 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
-  ScrollView,
   StyleSheet,
-  Image,
-} from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { useLocalSearchParams } from "expo-router";
-import * as ImagePicker from "expo-image-picker";
+  TouchableOpacity,
+  FlatList,
+  ActivityIndicator,
+  Modal,
+} from 'react-native';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import { doc, getDoc, getFirestore } from 'firebase/firestore';
+import { app } from '../../../../configs/FirebaseConfig';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
-export default function TripNotepad() {
+const firestore = getFirestore(app);
+
+export default function Notepad() {
   const { tripId } = useLocalSearchParams();
+  const router = useRouter();
+  const [notes, setNotes] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [helpModalVisible, setHelpModalVisible] = useState(false);
 
-  // State for notes, tags, images, and current text formatting
-  const [notes, setNotes] = useState("");
-  const [images, setImages] = useState([]);
-  const [tags, setTags] = useState("");
-  const [savedNotes, setSavedNotes] = useState(null);
-
-  // Load saved notes when component mounts
   useEffect(() => {
-    const loadNotes = async () => {
-      const storedNotes = await AsyncStorage.getItem(`trip_notes_${tripId}`);
-      if (storedNotes) {
-        const parsedNotes = JSON.parse(storedNotes);
-        setNotes(parsedNotes.notes || "");
-        setImages(parsedNotes.images || []);
-        setTags(parsedNotes.tags || "");
+    const fetchNotes = async () => {
+      if (!tripId) {
+        console.error('Trip ID is missing');
+        setLoading(false);
+        return;
       }
+      try {
+        const tripDoc = await getDoc(doc(firestore, 'ManagedTrips', tripId));
+        if (tripDoc.exists()) {
+          const data = tripDoc.data();
+          setNotes(data.notes || []);
+        } else {
+          console.error('No trip found with the provided tripId');
+        }
+      } catch (error) {
+        console.error('Error fetching notes:', error);
+      }
+      setLoading(false);
     };
-    loadNotes();
+
+    fetchNotes();
   }, [tripId]);
 
-  // Save notes to local storage
-  const saveNotes = async () => {
-    const noteData = { notes, images, tags, updatedAt: new Date().toISOString() };
-    await AsyncStorage.setItem(`trip_notes_${tripId}`, JSON.stringify(noteData));
-    setSavedNotes(noteData);
-    alert("Notes saved successfully!");
-  };
-
-  // Image Picker Handler
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setImages((prevImages) => [...prevImages, result.assets[0].uri]);
-    }
-  };
+  const renderNoteCard = ({ item }) => (
+    <View style={styles.noteCard}>
+      <Text style={styles.noteTitle}>{item.title}</Text>
+      <Text style={styles.noteContent}>{item.content}</Text>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Notepad for Trip ID: {tripId}</Text>
-      <ScrollView style={styles.scrollContainer}>
-        {/* Text Input for Notes */}
-        <TextInput
-          style={styles.textInput}
-          placeholder="Start writing your notes here..."
-          value={notes}
-          onChangeText={(text) => setNotes(text)}
-          multiline
-        />
+      {/* Header */}
+      <View style={styles.header}>
+        <Text style={styles.headerText}>Trip Diary ❤️</Text>
+      </View>
 
-        {/* Tags Input */}
-        <TextInput
-          style={styles.tagInput}
-          placeholder="Add tags (e.g., Ideas, Restaurants)..."
-          value={tags}
-          onChangeText={(text) => setTags(text)}
-        />
-
-        {/* Image Preview */}
-        <ScrollView horizontal style={styles.imageContainer}>
-          {images.map((imageUri, index) => (
-            <Image key={index} source={{ uri: imageUri }} style={styles.image} />
-          ))}
-        </ScrollView>
-
-        {/* Buttons */}
-        <View style={styles.buttonContainer}>
-          <TouchableOpacity style={styles.button} onPress={pickImage}>
-            <Text style={styles.buttonText}>Add Image</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.button} onPress={saveNotes}>
-            <Text style={styles.buttonText}>Save Notes</Text>
-          </TouchableOpacity>
+      {/* Content */}
+      {loading ? (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#007AFF" />
         </View>
-      </ScrollView>
-
-      {/* Saved Notes */}
-      {savedNotes && (
-        <View style={styles.savedNotes}>
-          <Text style={styles.savedNotesText}>
-            Last Saved: {new Date(savedNotes.updatedAt).toLocaleString()}
+      ) : notes.length === 0 ? (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>
+            Write about your wonderful experiences, save useful information, and keep track of contacts you made on this trip. Let this notepad be your treasure trove of memories!
           </Text>
         </View>
+      ) : (
+        <FlatList
+          data={notes}
+          renderItem={renderNoteCard}
+          keyExtractor={(item, index) => index.toString()}
+          style={styles.notesList}
+        />
       )}
+
+      {/* Help Button */}
+      <TouchableOpacity
+        style={styles.helpButton}
+        onPress={() => setHelpModalVisible(true)}
+      >
+        <Ionicons name="help-circle" size={30} color="#007AFF" />
+      </TouchableOpacity>
+
+      {/* Add Note Button */}
+      <TouchableOpacity
+        style={styles.addButton}
+        onPress={() => router.push(`/new/manageOptions/${tripId}/noteCard`)}
+      >
+        <Ionicons name="add" size={30} color="#fff" />
+      </TouchableOpacity>
+
+      {/* Help Modal */}
+      <Modal
+        animationType="slide"
+        transparent={true}
+        visible={helpModalVisible}
+        onRequestClose={() => setHelpModalVisible(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalText}>
+              🌟 Use this notepad to: 
+              {"\n\n"}• Record your wonderful experiences and favorite memories.
+              {"\n"}• Save useful information like addresses, schedules, or directions.
+              {"\n"}• Keep track of contacts you made on this trip.
+              {"\n"}• Jot down ideas, reminders, or anything that inspires you!
+            </Text>
+            <TouchableOpacity
+              style={styles.modalCloseButton}
+              onPress={() => setHelpModalVisible(false)}
+            >
+              <Text style={styles.modalCloseText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -110,70 +128,109 @@ export default function TripNotepad() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 20,
-    backgroundColor: "#f9f9f9",
+    backgroundColor: '#f9f9f9',
+    paddingHorizontal: 20,
+    paddingTop: 40,
   },
-  title: {
+  header: {
+    paddingVertical: 15,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#ddd',
+    marginBottom: 10,
+  },
+  headerText: {
     fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
-    color: "#333",
+    fontFamily: 'outfit-bold',
+    color: '#333',
   },
-  scrollContainer: {
+  loadingContainer: {
     flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  textInput: {
-    backgroundColor: "#fff",
-    padding: 15,
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 30,
+  },
+  emptyText: {
     fontSize: 16,
-    borderRadius: 8,
-    borderColor: "#ddd",
-    borderWidth: 1,
-    marginBottom: 15,
+    color: '#555',
+    textAlign: 'center',
+    lineHeight: 22,
   },
-  tagInput: {
-    backgroundColor: "#fff",
-    padding: 10,
+  notesList: {
+    marginBottom: 20,
+  },
+  noteCard: {
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 10,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  noteTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  noteContent: {
     fontSize: 14,
-    borderRadius: 8,
-    borderColor: "#ddd",
-    borderWidth: 1,
-    marginBottom: 15,
+    color: '#555',
+    marginTop: 5,
   },
-  imageContainer: {
-    flexDirection: "row",
-    marginBottom: 15,
+  addButton: {
+    backgroundColor: 'black',
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    bottom: 30,
+    right: 20,
+    elevation: 5,
   },
-  image: {
-    width: 100,
-    height: 100,
-    borderRadius: 8,
-    marginRight: 10,
+  helpButton: {
+    position: 'absolute',
+    bottom: 110,
+    right: 35,
+    backgroundColor: 'transparent',
   },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  button: {
-    backgroundColor: "#4CAF50",
-    padding: 10,
-    borderRadius: 8,
+  modalContainer: {
     flex: 1,
-    marginHorizontal: 5,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.5)',
   },
-  buttonText: {
-    color: "#fff",
-    textAlign: "center",
-    fontWeight: "bold",
+  modalContent: {
+    width: '80%',
+    backgroundColor: '#fff',
+    borderRadius: 10,
+    padding: 20,
+    alignItems: 'center',
+    elevation: 5,
   },
-  savedNotes: {
-    marginTop: 15,
-    padding: 10,
-    backgroundColor: "#e6f7e6",
-    borderRadius: 8,
+  modalText: {
+    fontSize: 16,
+    color: '#333',
+    textAlign: 'center',
+    lineHeight: 24,
   },
-  savedNotesText: {
-    fontSize: 14,
-    color: "#2b7a2b",
+  modalCloseButton: {
+    marginTop: 20,
+    backgroundColor: '#007AFF',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 5,
+  },
+  modalCloseText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
 });

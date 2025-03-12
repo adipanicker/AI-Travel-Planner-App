@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, ScrollView, RefreshControl } from 'react-native';
 import { Colors } from '../../constants/Colors';
 import { internationalData, indianData } from './tripData';
+import { useRouter } from 'expo-router';
 
 const Discover = () => {
   const [internationalTrips, setInternationalTrips] = useState([]);
@@ -9,6 +10,7 @@ const Discover = () => {
   const [displayedInternationalTrips, setDisplayedInternationalTrips] = useState([]);
   const [displayedIndianTrips, setDisplayedIndianTrips] = useState([]);
   const [refreshing, setRefreshing] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
     setInternationalTrips(internationalData);
@@ -28,6 +30,13 @@ const Discover = () => {
     setRefreshing(false);
   };
 
+  const handleTripPress = (trip) => {
+    router.push({
+      pathname: '/new/TripDetails',
+      params: { trip: JSON.stringify(trip) },
+    });
+  };
+
   return (
     <ScrollView 
       style={styles.container}
@@ -41,7 +50,7 @@ const Discover = () => {
 
       <Text style={styles.sectionTitle}>International Trips</Text>
       {displayedInternationalTrips.map((trip) => (
-        <TouchableOpacity key={trip.id} style={styles.card}>
+        <TouchableOpacity key={trip.id} style={styles.card} onPress={() => handleTripPress(trip)}>
           <Image source={{ uri: trip.imageUrl }} style={styles.image} />
           <View style={styles.info}>
             <Text style={styles.name}>{trip.name}</Text>
@@ -52,7 +61,7 @@ const Discover = () => {
 
       <Text style={styles.sectionTitle}>Indian Trips</Text>
       {displayedIndianTrips.map((trip) => (
-        <TouchableOpacity key={trip.id} style={styles.card}>
+        <TouchableOpacity key={trip.id} style={styles.card} onPress={() => handleTripPress(trip)}>
           <Image source={{ uri: trip.imageUrl }} style={styles.image} />
           <View style={styles.info}>
             <Text style={styles.name}>{trip.name}</Text>
@@ -69,6 +78,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
+    paddingTop: 20,
     backgroundColor: '#f5f5f5',
   },
   header: {

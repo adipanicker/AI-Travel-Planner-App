@@ -45,12 +45,12 @@ export default function CurrentTripPlace() {
       <Text
         style={{
           fontSize: 18,
-          fontWeight: 'bold',
+          fontFamily: 'outfit-bold',
           marginBottom: 20,
           textAlign: 'center',
         }}
       >
-        Add Your Trip Place
+        Add place you're currently visiting or planning to visit
       </Text>
       <GooglePlacesAutocomplete
         placeholder="Search Place"

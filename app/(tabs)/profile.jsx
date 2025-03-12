@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,13 +8,19 @@ import {
 } from 'react-native';
 import { auth } from './../../configs/FirebaseConfig';
 import { Colors } from './../../constants/Colors';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 
 export default function Profile() {
   const user = auth.currentUser;
   const router = useRouter();
-  // Hardcoded username
-  const hardcodedUsername = 'EpicTraveler7632'; // Replace with your desired hardcoded name
+  const { username } = useLocalSearchParams();
+  const [hardcodedUsername, setHardcodedUsername] = useState('EpicTraveler7632'); // Default username
+
+  useEffect(() => {
+    if (username) {
+      setHardcodedUsername(username);
+    }
+  }, [username]);
 
   const handleLogout = () => {
     auth
@@ -50,10 +56,10 @@ export default function Profile() {
           onPress={() => router.push('../../new/plannedTrips')}>
           <Text style={styles.plannedTripsButtonText}>View Planned Trips</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity style={styles.button} onPress={() => router.push('/new/editProfile/editProfile')}>
           <Text style={styles.buttonText}>Edit Profile</Text>
         </TouchableOpacity>
-        <TouchableOpacity style={styles.button}>
+        <TouchableOpacity style={styles.button} onPress={() => router.push('/new/settings')}>
           <Text style={styles.buttonText}>Settings</Text>
         </TouchableOpacity>
         <TouchableOpacity
