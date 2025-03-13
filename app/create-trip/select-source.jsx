@@ -11,6 +11,7 @@ import {
 import { useNavigation, useRouter } from "expo-router";
 import { CreateTripContext } from "./../../context/CreateTripContext";
 import { Colors } from "../../constants/Colors";
+import Constants from "expo-constants";
 
 export default function SelectSource() {
   const navigation = useNavigation();
@@ -35,6 +36,10 @@ export default function SelectSource() {
     }
   };
 
+  console.log("Using API Key: ", process.env.EXPO_PUBLIC_GOOGLE_MAP_KEY);
+  console.log("Expected API Key:", process.env.EXPO_PUBLIC_GOOGLE_MAP_KEY);
+  console.log("All ENV variables:", process.env);
+
   // Fetch place predictions using Autocomplete (New) API
   const fetchPredictions = async (query) => {
     if (!query) {
@@ -43,6 +48,7 @@ export default function SelectSource() {
     }
 
     const apiKey = process.env.EXPO_PUBLIC_GOOGLE_MAP_KEY;
+
     const apiUrl = "https://places.googleapis.com/v1/places:autocomplete";
 
     try {
@@ -51,18 +57,37 @@ export default function SelectSource() {
         headers: {
           "Content-Type": "application/json",
           "X-Goog-Api-Key": apiKey,
-          "X-Goog-FieldMask": "predictions.description",
+          "X-Goog-FieldMask":
+            "suggestions.placePrediction.text,suggestions.queryPrediction.text",
         },
         body: JSON.stringify({
           input: query,
+          locationBias: {
+            circle: {
+              center: {
+                latitude: 10.56, // Set appropriate lat/lon or fetch dynamically
+                longitude: 76.4194,
+              },
+              radius: 5000.0, // Bias for nearby locations
+            },
+          },
+          languageCode: "en",
+          includeQueryPredictions: true, // Allow generic search queries
         }),
       });
 
       const data = await response.json();
-      console.log("Autocomplete Response:", data); // Debugging
+      console.log("Autocomplete Response:", data);
 
-      if (data.predictions) {
-        setPredictions(data.predictions.map((item) => item.description));
+      if (data.suggestions) {
+        const placeNames = data.suggestions.map((item) =>
+          item.placePrediction
+            ? item.placePrediction.text.text
+            : item.queryPrediction
+            ? item.queryPrediction.text.text
+            : ""
+        );
+        setPredictions(placeNames.filter((name) => name));
       } else {
         setPredictions([]);
       }
