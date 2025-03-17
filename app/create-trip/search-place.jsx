@@ -19,7 +19,8 @@ export default function SearchPlace() {
 
   const [selectedPlace, setSelectedPlace] = useState(null); // State to track selected place
   const [searchQuery, setSearchQuery] = useState(""); // User input
-  const [predictions, setPredictions] = useState([]); // API response
+  const [predictions, setPredictions] = useState([]);
+  const [locationPlaceId, setLocationPlaceId] = useState([]); // API response
 
   useEffect(() => {
     navigation.setOptions({
@@ -31,13 +32,17 @@ export default function SearchPlace() {
   const handleNextPress = () => {
     console.log("Selected Place:", selectedPlace);
     if (selectedPlace) {
-      setTripData({ ...tripData, location: selectedPlace }); // Save the destination in the context
+      setTripData({
+        ...tripData,
+        location: selectedPlace,
+        locationPlaceId: locationPlaceId,
+      }); // Save the destination in the context
       router.push("/create-trip/select-traveler"); // Navigate to the next page
     }
   };
 
   // Fetch place predictions using the new Google Places API
-  const fetchPredictions = async (query) => {
+  const fetchPredictions = async (query, shouldExtractPlaceId = false) => {
     if (!query) {
       setPredictions([]);
       return;
@@ -45,53 +50,85 @@ export default function SearchPlace() {
 
     const apiKey = process.env.EXPO_PUBLIC_GOOGLE_MAP_KEY;
 
-    const apiUrl = "https://places.googleapis.com/v1/places:autocomplete";
-
     try {
-      const response = await fetch(apiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Goog-Api-Key": apiKey,
-          "X-Goog-FieldMask":
-            "suggestions.placePrediction.text,suggestions.queryPrediction.text",
-        },
-        body: JSON.stringify({
-          input: query,
-          locationBias: {
-            circle: {
-              center: {
-                latitude: 10.56, // Set appropriate lat/lon or fetch dynamically
-                longitude: 76.4194,
-              },
-              radius: 5000.0, // Bias for nearby locations
-            },
+      const response = await fetch(
+        "https://places.googleapis.com/v1/places:autocomplete",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "X-Goog-Api-Key": apiKey,
+            "X-Goog-FieldMask":
+              "suggestions.placePrediction.text,suggestions.placePrediction.placeId,suggestions.queryPrediction.text",
           },
-          languageCode: "en",
-          includeQueryPredictions: true, // Allow generic search queries
-        }),
-      });
+          body: JSON.stringify({
+            input: query,
+            locationBias: {
+              circle: {
+                center: {
+                  latitude: 10.56,
+                  longitude: 76.4194,
+                },
+                radius: 5000.0,
+              },
+            },
+            languageCode: "en",
+            includeQueryPredictions: true,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}`);
+      }
 
       const data = await response.json();
-      console.log("Autocomplete Response:", data.toString());
+      console.log("Autocomplete Response received");
 
-      if (data.suggestions) {
-        const placeNames = data.suggestions.map((item) =>
-          item.placePrediction
-            ? item.placePrediction.text.text
-            : item.queryPrediction
-            ? item.queryPrediction.text.text
-            : ""
-        );
-        setPredictions(placeNames.filter((name) => name));
+      if (shouldExtractPlaceId) {
+        // Extract place ID for the exact query
+        if (
+          data.suggestions &&
+          data.suggestions.length > 0 &&
+          data.suggestions[0].placePrediction
+        ) {
+          const placeId = data.suggestions[0].placePrediction.placeId;
+          setLocationPlaceId(placeId);
+          console.log("Extracted Place ID:", placeId);
+        } else {
+          console.log("No place ID found for this query");
+        }
+        return;
+      }
+
+      // Extract predictions for display
+      if (data.suggestions && data.suggestions.length > 0) {
+        const places = data.suggestions
+          .map((item) => {
+            if (item.placePrediction) {
+              return {
+                name: item.placePrediction.text.text,
+                placeId: item.placePrediction.placeId,
+              };
+            } else if (item.queryPrediction) {
+              return {
+                name: item.queryPrediction.text.text,
+                placeId: null,
+              };
+            }
+            return null;
+          })
+          .filter((place) => place !== null);
+
+        setPredictions(places);
       } else {
         setPredictions([]);
       }
     } catch (error) {
       console.error("Error fetching predictions:", error);
+      setPredictions([]);
     }
   };
-
   // Fetch place details using the new Google Places API
   const fetchPlaceDetails = async (placeId) => {
     const apiKey = process.env.EXPO_PUBLIC_GOOGLE_MAP_KEY;
@@ -135,29 +172,37 @@ export default function SearchPlace() {
           value={searchQuery}
           onChangeText={(text) => {
             setSearchQuery(text);
-            fetchPredictions(text);
+            fetchPredictions(text, false);
           }}
         />
 
         {/* Display Predictions */}
-        <FlatList
-          data={predictions}
-          keyExtractor={(item, index) => index.toString()}
-          style={styles.listView}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.listItem}
-              onPress={async () => {
-                setSelectedPlace({ name: item });
-                setSearchQuery(item);
-                setPredictions([]);
-              }}
-            >
-              <Text style={styles.listItemText}>{item}</Text>
-            </TouchableOpacity>
-          )}
-        />
-
+        {predictions.length > 0 && (
+          <FlatList
+            data={predictions}
+            keyExtractor={(item, index) => index.toString()}
+            style={styles.listView}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.listItem}
+                onPress={() => {
+                  setSelectedPlace({ name: item.name });
+                  setSearchQuery(item.name);
+                  if (item.placeId) {
+                    setLocationPlaceId(item.placeId);
+                    console.log("Selected place ID:", item.placeId);
+                  } else {
+                    // If no place ID, fetch it
+                    fetchPredictions(item.name, true);
+                  }
+                  setPredictions([]);
+                }}
+              >
+                <Text style={styles.listItemText}>{item.name}</Text>
+              </TouchableOpacity>
+            )}
+          />
+        )}
         {/* NEXT Button */}
         {selectedPlace && (
           <TouchableOpacity style={styles.nextButton} onPress={handleNextPress}>
@@ -198,6 +243,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     backgroundColor: "#fff",
     borderRadius: 8,
+    maxHeight: 200,
   },
   listItem: {
     padding: 15,

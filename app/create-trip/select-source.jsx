@@ -58,7 +58,7 @@ export default function SelectSource() {
           "Content-Type": "application/json",
           "X-Goog-Api-Key": apiKey,
           "X-Goog-FieldMask":
-            "suggestions.placePrediction.text,suggestions.queryPrediction.text",
+            "suggestions.placePrediction.text,suggestions.placePrediction.placeId,suggestions.queryPrediction.text",
         },
         body: JSON.stringify({
           input: query,
@@ -117,24 +117,25 @@ export default function SelectSource() {
         />
 
         {/* Display Predictions */}
-        <FlatList
-          data={predictions}
-          keyExtractor={(item, index) => index.toString()}
-          style={styles.listView}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.listItem}
-              onPress={() => {
-                setSelectedPlace({ name: item });
-                setSearchQuery(item);
-                setPredictions([]); // Hide suggestions after selection
-              }}
-            >
-              <Text style={styles.listItemText}>{item}</Text>
-            </TouchableOpacity>
-          )}
-        />
-
+        {predictions.length > 0 && (
+          <FlatList
+            data={predictions}
+            keyExtractor={(item, index) => index.toString()}
+            style={styles.listView}
+            renderItem={({ item }) => (
+              <TouchableOpacity
+                style={styles.listItem}
+                onPress={() => {
+                  setSelectedPlace({ name: item });
+                  setSearchQuery(item);
+                  setPredictions([]); // Hide suggestions after selection
+                }}
+              >
+                <Text style={styles.listItemText}>{item}</Text>
+              </TouchableOpacity>
+            )}
+          />
+        )}
         {/* NEXT Button */}
         {selectedPlace && (
           <TouchableOpacity style={styles.nextButton} onPress={handleNextPress}>
@@ -175,6 +176,7 @@ const styles = StyleSheet.create({
     marginTop: 10,
     backgroundColor: "#fff",
     borderRadius: 8,
+    maxHeight: 200,
   },
   listItem: {
     padding: 15,
