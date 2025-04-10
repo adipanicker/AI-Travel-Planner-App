@@ -5,13 +5,19 @@ import {
   TextInput,
   TouchableOpacity,
   ToastAndroid,
+  Alert,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useNavigation, useRouter } from "expo-router";
 import { Colors } from "../../../constants/Colors";
 import { Ionicons } from "@expo/vector-icons";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import {
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+} from "firebase/auth";
 import { auth } from "./../../../configs/FirebaseConfig";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 export default function SignUp() {
   const navigation = useNavigation();
   const router = useRouter();
@@ -19,6 +25,7 @@ export default function SignUp() {
   const [email, setEmail] = useState();
   const [password, setPassword] = useState();
   const [fullName, setFullName] = useState();
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     navigation.setOptions({
@@ -32,21 +39,64 @@ export default function SignUp() {
       return;
     }
 
+    setLoading(true);
+
     createUserWithEmailAndPassword(auth, email, password)
       .then((userCredential) => {
         // Signed up
         const user = userCredential.user;
         console.log(user);
-        router.replace("/auth/sign-in");
 
-        // ...
+        // Store a flag in local storage to identify this as a new user who needs strict verification
+        AsyncStorage.setItem(`strictVerify_${user.uid}`, "true")
+          .then(() => {
+            console.log("Strict verification flag set for new user");
+          })
+          .catch((err) => {
+            console.log("Error setting verification flag:", err);
+          });
+
+        // Send verification email
+        sendEmailVerification(user)
+          .then(() => {
+            // Email sent successfully
+            setLoading(false);
+
+            // Sign out the user after account creation
+            auth.signOut().then(() => {
+              // Show success alert
+              Alert.alert(
+                "Verification Email Sent",
+                "Please check your email and verify your account before signing in. Verification is required to use the app.",
+                [
+                  {
+                    text: "OK",
+                    onPress: () => router.replace("/auth/sign-in"),
+                  },
+                ]
+              );
+            });
+          })
+          .catch((verificationError) => {
+            setLoading(false);
+            ToastAndroid.show(
+              "Error sending verification email: " + verificationError.message,
+              ToastAndroid.LONG
+            );
+            console.log("Verification error:", verificationError);
+
+            // Sign out and redirect to sign-in even if verification email fails
+            auth.signOut().then(() => {
+              router.replace("/auth/sign-in");
+            });
+          });
       })
       .catch((error) => {
+        setLoading(false);
         const errorCode = error.code;
         const errorMessage = error.message;
         ToastAndroid.show(errorCode, ToastAndroid.LONG);
         console.log("--", errorMessage, errorCode);
-        // ..
       });
   };
 
@@ -108,6 +158,8 @@ export default function SignUp() {
           style={styles.input}
           onChangeText={(value) => setEmail(value)}
           placeholder="Enter Email"
+          keyboardType="email-address"
+          autoCapitalize="none"
         />
       </View>
       {/* Password  */}
@@ -134,9 +186,10 @@ export default function SignUp() {
       {/* Sign Up Button  */}
       <TouchableOpacity
         onPress={OnCreateAccount}
+        disabled={loading}
         style={{
           padding: 20,
-          backgroundColor: Colors.PRIMARY,
+          backgroundColor: loading ? Colors.GRAY : Colors.PRIMARY,
           borderRadius: 15,
           marginTop: 50,
         }}
@@ -147,13 +200,14 @@ export default function SignUp() {
             textAlign: "center",
           }}
         >
-          Create Account
+          {loading ? "Creating Account..." : "Create Account"}
         </Text>
       </TouchableOpacity>
 
       {/* Sign In Button  */}
       <TouchableOpacity
         onPress={() => router.replace("auth/sign-in")}
+        disabled={loading}
         style={{
           padding: 20,
           backgroundColor: Colors.WHITE,

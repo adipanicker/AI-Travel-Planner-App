@@ -348,38 +348,121 @@ export default function Expenses() {
               </Text>
             </View>
           }
+          // In your Expenses component, modify the ListFooterComponent section
+          // Replace the current PieChart implementation with this aggregated version
+
+          // Replace the current ListFooterComponent with this dual chart implementation
+
           ListFooterComponent={
             expenses.length > 0 ? (
-              <View style={styles.chartSection}>
-                <Text style={styles.chartTitle}>Expense Breakdown</Text>
-                <View style={styles.chartContainer}>
-                  <PieChart
-                    data={expenses.map((item, index) => ({
-                      name: item.type,
-                      amount: item.amount,
-                      color: [
-                        "#FF6384",
-                        "#36A2EB",
-                        "#FFCE56",
-                        "#4BC0C0",
-                        "#9966FF",
-                      ][index % 5],
-                      legendFontColor: "#333",
-                      legendFontSize: 14,
-                    }))}
-                    width={width - 48}
-                    height={220}
-                    chartConfig={{
-                      backgroundColor: "#fff",
-                      color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
-                    }}
-                    accessor="amount"
-                    backgroundColor="transparent"
-                    paddingLeft="15"
-                    absolute
-                  />
+              <>
+                {/* Category-wise Spending Chart */}
+                <View style={styles.chartSection}>
+                  <Text style={styles.chartTitle}>Spending by Category</Text>
+                  <View style={styles.chartContainer}>
+                    <PieChart
+                      data={
+                        // Group and aggregate expenses by type
+                        Object.entries(
+                          expenses.reduce((acc, item) => {
+                            // If this category already exists, add to its amount
+                            if (acc[item.type]) {
+                              acc[item.type] += item.amount;
+                            } else {
+                              // Otherwise create a new category
+                              acc[item.type] = item.amount;
+                            }
+                            return acc;
+                          }, {})
+                        ).map(([type, amount], index) => ({
+                          name: type,
+                          amount: amount,
+                          color: [
+                            "#FF6384", // Food - Pink
+                            "#36A2EB", // Transport - Blue
+                            "#FFCE56", // Stay - Yellow
+                            "#4BC0C0", // Activities - Teal
+                            "#9966FF", // Other - Purple
+                          ][
+                            // Map category to consistent color
+                            {
+                              Food: 0,
+                              Transport: 1,
+                              Stay: 2,
+                              Activities: 3,
+                              Other: 4,
+                            }[type] || index % 5
+                          ],
+                          legendFontColor: "#333",
+                          legendFontSize: 14,
+                        }))
+                      }
+                      width={width - 48}
+                      height={220}
+                      chartConfig={{
+                        backgroundColor: "#fff",
+                        color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                      }}
+                      accessor="amount"
+                      backgroundColor="transparent"
+                      paddingLeft="15"
+                      absolute
+                    />
+                  </View>
                 </View>
-              </View>
+
+                {/* Individual Expenses Chart */}
+                <View style={styles.chartSection}>
+                  <Text style={styles.chartTitle}>
+                    Individual Expense Breakdown
+                  </Text>
+                  <View style={styles.chartContainer}>
+                    <PieChart
+                      data={expenses.map((item, index) => {
+                        // Create a more descriptive name that includes amount
+                        const shortDesc = item.description
+                          ? item.description.length > 15
+                            ? item.description.substring(0, 15) + "..."
+                            : item.description
+                          : item.type;
+
+                        return {
+                          name: `${shortDesc} (${currency} ${item.amount})`,
+                          amount: item.amount,
+                          color: [
+                            "#FF6384", // Food - Pink
+                            "#36A2EB", // Transport - Blue
+                            "#FFCE56", // Stay - Yellow
+                            "#4BC0C0", // Activities - Teal
+                            "#9966FF", // Other - Purple
+                          ][
+                            // Map category to consistent color
+                            {
+                              Food: 0,
+                              Transport: 1,
+                              Stay: 2,
+                              Activities: 3,
+                              Other: 4,
+                            }[item.type] || index % 5
+                          ],
+                          legendFontColor: "#333",
+                          legendFontSize: 12,
+                        };
+                      })}
+                      width={width - 48}
+                      height={220}
+                      chartConfig={{
+                        backgroundColor: "#fff",
+                        color: (opacity = 1) => `rgba(0, 0, 0, ${opacity})`,
+                      }}
+                      accessor="amount"
+                      backgroundColor="transparent"
+                      paddingLeft="15"
+                      absolute
+                    />
+                  </View>
+                </View>
+              </>
             ) : null
           }
           contentContainerStyle={styles.listContentContainer}
