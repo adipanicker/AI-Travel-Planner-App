@@ -20,7 +20,6 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { useNavigation } from "@react-navigation/native";
 
-// Ensure your API key is correctly configured via environment variables
 const apiKey = process.env.EXPO_PUBLIC_GOOGLE_GEMINI_API_KEY;
 
 // Initialize GoogleGenerativeAI client
@@ -92,7 +91,6 @@ const ChatScreen = () => {
       }
     };
 
-    // Only save if we have messages and not just loading
     if (messages.length > 0) {
       saveMessages();
     }
@@ -197,7 +195,6 @@ const ChatScreen = () => {
 
       const userMessage = newMessages[0].text;
 
-      // Show AI is typing
       setIsTyping(true);
 
       try {
@@ -276,7 +273,7 @@ const ChatScreen = () => {
     navigation.goBack();
   };
 
-  // Customize chat bubbles
+  // Custom chat bubbles
   const renderBubble = (props) => {
     return (
       <Bubble
@@ -315,7 +312,7 @@ const ChatScreen = () => {
     );
   };
 
-  // Customize input toolbar
+  // Custom input toolbar
   const renderInputToolbar = (props) => {
     return (
       <InputToolbar
@@ -344,7 +341,7 @@ const ChatScreen = () => {
     );
   };
 
-  // Customize send button
+  // Custom send button
   const renderSend = (props) => {
     return (
       <Send
@@ -364,7 +361,7 @@ const ChatScreen = () => {
     );
   };
 
-  // Customize day display
+  // Custom day display
   const renderDay = (props) => {
     return (
       <Day
