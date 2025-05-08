@@ -273,9 +273,10 @@ Built with React Native + Expo for a responsive and fast mobile-first experience
 
 <div align="center">
   
-  [![Let's Go! App Demo](https://img.youtube.com/vi/YOUTUBE_VIDEO_ID/0.jpg)](https://www.youtube.com/watch?v=YOUTUBE_VIDEO_ID)
   
   [Watch full demo on YouTube](https://www.youtube.com/watch?v=YOUTUBE_VIDEO_ID)
+  **Coming soon...** 🚀  
+  A full walkthrough video of the app in action will be uploaded here shortly.
   
 </div>
 
