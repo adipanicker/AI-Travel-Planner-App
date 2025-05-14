@@ -1,18 +1,7 @@
-# 🧳 Let's Go! – AI Travel Planner App
+# 🚀 Let's Go! – AI Travel Planner App
 
-<div align="center">
-  
-  ![Let's Go! Banner](assets/banner.png)
 
-  **Your Personal AI-Powered Travel Buddy**  
-  Plan smarter, travel better. Let AI handle the hard part so you can enjoy the journey. 🌍✈️
-  
-  [![GitHub stars](https://img.shields.io/github/stars/yourusername/letsgo-ai-travel-planner?style=social)](https://github.com/yourusername/letsgo-ai-travel-planner/stargazers)
-  [![GitHub forks](https://img.shields.io/github/forks/yourusername/letsgo-ai-travel-planner?style=social)](https://github.com/yourusername/letsgo-ai-travel-planner/network/members)
-  [![GitHub issues](https://img.shields.io/github/issues/yourusername/letsgo-ai-travel-planner)](https://github.com/yourusername/letsgo-ai-travel-planner/issues)
-  [![GitHub license](https://img.shields.io/github/license/yourusername/letsgo-ai-travel-planner)](https://github.com/yourusername/letsgo-ai-travel-planner/blob/main/LICENSE)
-  
-</div>
+
 
 ---
 
